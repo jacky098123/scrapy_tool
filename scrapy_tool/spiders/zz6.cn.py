@@ -17,17 +17,17 @@ from scrapy.spider import BaseSpider
 from scrapy_tool.items import ScrapyToolItem
 
 class IncludeSpider(BaseSpider, CommonHandler):
-    name = "apple"
-    allowed_domains = ["apple.com"]
+    name = "zz6"
+    allowed_domains = ["zz6.cn"]
 
     def __init__(self, kxdebug=None):
         self.kxdebug    = kxdebug
+        self.prefix     = 'http://www.zz6.cn/'
 
     def start_requests(self):
         request_list    = []
         url_list = [
-#            'http://store.apple.com/cn/browse/home/specialdeals/mac/imac',
-            'http://store.apple.com/cn/browse/home/specialdeals/ipad/ipad_mini/wi_fi'
+            'http://www.zz6.cn/'
             ]
         for url in url_list:
             request = Request(

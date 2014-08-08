@@ -25,10 +25,10 @@ from utils.common_handler import CommonHandler
 from utils.btlog import btlog_init
 
 LOCAL_DB = {
-    "host"  : "127.0.0.1",
-    "user"  : "root",
-    "passwd": "51manhua",
-    "database"  : "test",
+    "host"  : "192.168.2.11",
+    "user"  : "product_w",
+    "passwd": "kooxoo",
+    "database"  : "basic_data",
     "port"      : 3306,
     "charset"   : "utf8"
 }

@@ -19,10 +19,10 @@ from scrapy_tool.items import ScrapyToolItem
 from parser_zz6 import Zz6Parse
 
 LOCAL_DB = {
-    "host"  : "127.0.0.1",
-    "user"  : "root",
-    "passwd": "51manhua",
-    "database"  : "test",
+    "host"  : "192.168.2.11",
+    "user"  : "product_w",
+    "passwd": "kooxoo",
+    "database"  : "basic_data",
     "port"      : 3306,
     "charset"   : "utf8"
 }
@@ -41,7 +41,7 @@ class Zz6Spider(BaseSpider, CommonHandler):
     def start_requests(self):
         request_list    = []
 #        sql = "select * from zz6_info where path like '27|%' "
-        sql = "select * from zz6_info "
+        sql = "select * from zz6_info where length(admin_level) = 0"
         result_set = self.db_conn.QueryDict(sql)
         for row in result_set:
             request = Request(
@@ -69,7 +69,7 @@ class Zz6Spider(BaseSpider, CommonHandler):
         parse = Zz6Parse()
         sub_info = parse.parse_sub_info(response.body)
         sub_info['id']          = kx_args['id']
-        self.db_conn.Upsert('zz6_info', db_dict, ['id',])
+        self.db_conn.Upsert('zz6_info', sub_info, ['id',])
 
     def parse(self, response):
         self.log("-- parse --")

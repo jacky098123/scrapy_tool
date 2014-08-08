@@ -20,8 +20,10 @@ class Zz6Parse(CommonHandler):
     TEST_FILE = '.zz6.html'
 
     CONVERT_DICT = {
+        u'简称': 'short_name',
+        u'面积': 'area',
         u'人口密度': 'population_dencity',
-        u'车牌号码': 'short_name',
+        u'车牌号码': 'license_prefix',
         u'行政级别': 'admin_level',
         u'人口': 'population',
         u'长途区号': 'tele_prefix',
@@ -108,6 +110,8 @@ class Zz6Parse(CommonHandler):
         data_info['title'] = self._format(h1)
 
         info_selector_list = hxs.select(".//table[@width='432px' and @bgcolor='cccccc']/tr/td")
+        if len(info_selector_list) == 0:
+            info_selector_list = hxs.select(".//table[@width='396px' and @bgcolor='cccccc']/tr/td")
         for info_selector in info_selector_list:
             key = info_selector.select(".//strong/text()").extract()
             key = self._format(key)
@@ -135,11 +139,12 @@ class Zz6Parse(CommonHandler):
     def fetch_file(self):
         url = "http://www.zz6.cn/beijing/"
         url = "http://www.zz6.cn/chongqing/zhongxian.html"
+        url = "http://www.zz6.cn/hubei/chibi_huanggaihunongchangdi.html"
         print url
         urllib.urlretrieve(url, self.TEST_FILE)
 
     def test(self):
-#        self.fetch_file()
+        self.fetch_file()
         self.test_parse(True)
 
 if __name__ == '__main__':

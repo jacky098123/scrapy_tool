@@ -41,7 +41,9 @@ class Zz6Spider(BaseSpider, CommonHandler):
     def start_requests(self):
         request_list    = []
 #        sql = "select * from zz6_info where path like '27|%' "
-        sql = "select * from zz6_info where length(admin_level) = 0"
+#        sql = "select * from zz6_info where length(admin_level) = 0"
+#        sql = "select * from zz6_info where path in (11, 26, 28) "
+        sql = "select * from zz6_info where pid > 0 "
         result_set = self.db_conn.QueryDict(sql)
         for row in result_set:
             request = Request(
@@ -62,6 +64,14 @@ class Zz6Spider(BaseSpider, CommonHandler):
             db_dict['url']          = descendant['descendant_url']
             db_dict['pid']          = kx_args['id']
             self.db_conn.Upsert('zz6_info', db_dict, ['url',])
+
+    def parse_province_info(self, response):
+        kx_args = response.meta['kx_args']
+        hxs = HtmlXPathSelector(response)
+        parse = Zz6Parse()
+        sub_info = parse.parse_province_info(response.body)
+        sub_info['id']          = kx_args['id']
+        self.db_conn.Upsert('zz6_info', sub_info, ['id',])
 
     def parse_sub_info(self, response):
         kx_args = response.meta['kx_args']

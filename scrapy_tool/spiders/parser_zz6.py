@@ -89,12 +89,19 @@ class Zz6Parse(CommonHandler):
             if not value:
                 value = info_selector.select('.//a/text()').extract()
                 value = self._format(value)
-            data_info[key] = value
+            if key and value:
+                if self.CONVERT_DICT.get(key):
+                    data_info[self.CONVERT_DICT[key]] = value
+                elif key.find(u'地址') > 0:
+                    data_info['address'] = value
+                else:
+                    pass
+#data_info[key] = value
 
         desc_list = hxs.select(".//div[@id='pagebody']/div[@id='page_left']/table[2]/tr/td[2]/text()")
-        data_info['desc'] = ''
+        data_info['description'] = ''
         for desc in desc_list:
-            data_info['desc'] += desc.extract()
+            data_info['description'] += desc.extract()
 
         for k,v in data_info.iteritems():
             print k,v
@@ -123,7 +130,8 @@ class Zz6Parse(CommonHandler):
                 if self.CONVERT_DICT.get(key):
                     data_info[self.CONVERT_DICT[key]] = v
                 else:
-                    data_info[key] = v
+                    pass
+#                    data_info[key] = v
         f14_desc_list = hxs.select(".//div[@class='f14']/text()").extract()
         data_info['description'] = "\n".join(f14_desc_list)
     
@@ -134,12 +142,12 @@ class Zz6Parse(CommonHandler):
 
     def test_parse(self, p=False):
         html_data = self.LoadFile(self.TEST_FILE)
-        data_list   = self.parse_sub_info(html_data)
+        data_list   = self.parse_province_info(html_data)
 
     def fetch_file(self):
         url = "http://www.zz6.cn/beijing/"
-        url = "http://www.zz6.cn/chongqing/zhongxian.html"
-        url = "http://www.zz6.cn/hubei/chibi_huanggaihunongchangdi.html"
+#        url = "http://www.zz6.cn/chongqing/zhongxian.html"
+#        url = "http://www.zz6.cn/hubei/chibi_huanggaihunongchangdi.html"
         print url
         urllib.urlretrieve(url, self.TEST_FILE)
 

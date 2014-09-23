@@ -1,3 +1,5 @@
+# coding: utf8
+
 import sys
 import logging
 import urllib
@@ -40,7 +42,7 @@ class Zz6Spider(BaseSpider, CommonHandler):
 
     def start_requests(self):
         request_list    = []
-        sql = "select * from test.yang_landmark_v1211 where description is null "
+        sql = "select id,name from test.yang_landmark_poi where flag = 'init3' limit 500000 "
         result_set = self.db_conn.QueryDict(sql)
         for row in result_set:
             request = Request(
@@ -60,6 +62,8 @@ class Zz6Spider(BaseSpider, CommonHandler):
         baike_parser = BaikeParser()
         content = baike_parser.parse(response.body)
         if len(content) > 10:
-            sql = "update test.yang_landmark_v1211 set description = %s where id = %s"
+            sql = "update test.yang_landmark_poi set description = %s, flag = 'succ' where id = %s "
             self.db_conn.Execute(sql, [content, kx_args['id']])
-        return
+        else:
+            sql = "update test.yang_landmark_poi set flag = 'failed' where id = %s"
+            self.db_conn.Execute(sql, [kx_args['id'],])

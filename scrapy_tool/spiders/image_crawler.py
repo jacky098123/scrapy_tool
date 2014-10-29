@@ -45,15 +45,19 @@ class ImageSpider(BaseSpider, CommonHandler):
 
     def start_requests(self):
         request_list    = []
-        sql = "select a.id,a.tc_img from basic_data.techan a left join basic_data.image_info b  "
+        '''
+        sql = "select a.id,a.tc_img as url from basic_data.techan a left join basic_data.image_info b  "
         sql += " on a.tc_img = b.url where b.url is null"
+        '''
+        sql = "select a.id,a.head_image as url from basic_data.tour_line a left join basic_data.image_info b "
+        sql += " on a.head_image = b.source_url where b.source_url is null and a.head_image like 'http://%' "
         self.log(sql)
         result_set = self.db_conn.QueryDict(sql)
         self.log("result_set: %d" % len(result_set))
         for row in result_set:
             request = Request(
-                url     = row['tc_img'],
-                meta    = {'kx_args': {'retry_times': 0, 'id': row['id'], 'url': row['tc_img']}})
+                url     = row['url'],
+                meta    = {'kx_args': {'retry_times': 0, 'id': row['id'], 'url': row['url']}})
             request_list.append(request)
         self.log("total request: %d" % len(request_list))
         return request_list
@@ -76,9 +80,9 @@ class ImageSpider(BaseSpider, CommonHandler):
             try:
                 im = Image.open(file_name)
                 db_dict = {}
-                db_dict['url']          = kx_args['url']
+                db_dict['source_url']   = kx_args['url']
                 db_dict['image_content']= image_content
-                db_dict['category']     = 'techan'
+                db_dict['category']     = 'tour' # TODO
                 self.db_conn.ExecuteInsertDict('basic_data.image_info', db_dict)
             except Exception, e:
                 self.log("invalid Image: %s" % str(e))

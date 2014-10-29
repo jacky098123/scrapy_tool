@@ -42,7 +42,7 @@ class Zz6Spider(BaseSpider, CommonHandler):
 
     def start_requests(self):
         request_list    = []
-        sql = "select id,name from test.yang_landmark_poi where flag = 'init3' limit 500000 "
+        sql = "select id,name from test.yang_landmark_poi where flag like 'init%' and type = '购物' limit 300000 "
         result_set = self.db_conn.QueryDict(sql)
         for row in result_set:
             request = Request(

@@ -12,12 +12,13 @@ BOT_NAME = 'scrapy_tool'
 SPIDER_MODULES = ['scrapy_tool.spiders']
 NEWSPIDER_MODULE = 'scrapy_tool.spiders'
 
-CONCURRENT_REQUESTS = 50
-CONCURRENT_REQUESTS_PER_DOMAIN  = 50
+#CONCURRENT_REQUESTS = 30
+#CONCURRENT_REQUESTS_PER_DOMAIN  = 30
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'scrapy_tool (+http://www.yourdomain.com)'
 
+'''
 DOWNLOADER_MIDDLEWARES = {
 #    'scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware': None, # disable it
 
@@ -30,3 +31,4 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy_tool._middlewares.kxrandom_proxy.KxRandomProxyMiddleware': 100,
     'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': None, # disable it
 }
+'''

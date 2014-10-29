@@ -45,9 +45,46 @@ class Zz6Formater(CommonHandler):
             logging.error("can not connect [%s]" % str(LOCAL_DB))
             raise Exception, "err"
 
-    def calculate_path(self):
+    def _stat(self, tmp_root, k):
+        d_lst = self.pid_id_dict.get(k, [])
+        if len(d_lst) == 0:
+            return
+        for d in d_lst:
+            tmp_root.setdefault(d,{})
+            self._stat(tmp_root[d], d)
+
+    def _stat_p(self, tmp_root, prefix):
+        level = len(prefix.split('|'))
+        sub_count = len(tmp_root)
+        self.p_lst.append("%d\t%s\t%d" % (level, prefix, sub_count))
+        if sub_count > 0:
+            for k in tmp_root.keys():
+                self._stat_p(tmp_root[k], prefix + '|' + str(k))
+
+    def stat(self):
+        id_pid_dict = {}
+        self.pid_id_dict = {}
+        sql = "select id,pid from zz6_info_new "
+        result_set = self.db_conn.QueryDict(sql)
+        for row in result_set:
+            id_pid_dict[row['id']]  = row['pid']
+            self.pid_id_dict.setdefault(row['pid'], [])
+            self.pid_id_dict[row['pid']].append(row['id'])
+
+        tree_dict = {}
+        self._stat(tree_dict, 0)
+        
+        self.p_lst = []
+        self._stat_p(tree_dict, '')
+
+        self.SaveList('a.txt', self.p_lst)
+        s_lst = sorted(self.p_lst, key=lambda x:x[0])
+        self.SaveList('b.txt', s_lst)
+
+
+    def calculate_path_level(self):
         city_dict = {}
-        sql = "select * from zz6_info "
+        sql = "select id,pid from zz6_info_new "
         result_set = self.db_conn.QueryDict(sql)
         for row in result_set:
             city_dict[row['id']] = row['pid']
@@ -59,8 +96,9 @@ class Zz6Formater(CommonHandler):
             while k:
                 path = str(k) + "|" + path
                 k = city_dict[k]
-            sql = "update zz6_info set path = %s where id = %s"
-            self.db_conn.Execute(sql, [path, city_id])
+            level = len(path.split('|'))
+            sql = "update zz6_info_new set ext_path = %s, ext_level=%s  where id = %s"
+            self.db_conn.Execute(sql, [path, level, city_id])
 
     def _match(self, n1, n2):
         if n1.find(n2) >= 0:
@@ -94,14 +132,14 @@ class Zz6Formater(CommonHandler):
             path_name_dict[row['city_id']] = name_list
 
         zz6_info_dict = {}
-        sql = "select id,pid,anchor_text,path from zz6_info "
+        sql = "select id,pid,anchor_text,ext_path from zz6_info_new "
         result_set = self.db_conn.QueryDict(sql)
         for row in result_set:
             zz6_info_dict[row['id']] = row['anchor_text']
 
         zz6_name_dict = {}
         for row in result_set:
-            path_list = row['path'].split(u'|')
+            path_list = row['ext_path'].split(u'|')
             name_list = []
             for path in path_list:
                 name_list.append(zz6_info_dict[int(path)])
@@ -113,7 +151,7 @@ class Zz6Formater(CommonHandler):
                 b = self.name_math(name_list, city_name_list)
                 if b:
                     flag = True
-                    sql = "update zz6_info set ext_city_id = '%s' where id = %s" % (self.ToString(city_id), self.ToString(sid))
+                    sql = "update zz6_info_new set ext_city_id = '%s' where id = %s" % (self.ToString(city_id), self.ToString(sid))
                     logging.info(sql)
                     self.db_conn.Execute(sql)
                     break
@@ -121,19 +159,12 @@ class Zz6Formater(CommonHandler):
                 logging.info("invalid sid: %s" % self.ToString(sid))
 
 
-    def update_level(self):
-        sql = "select id,path from zz6_info "
-        result_set = self.db_conn.QueryDict(sql)
-        for row in result_set:
-            items = row['path'].split(u'|')
-            level = len(items)
-            sql = "update zz6_info set ext_level=%d where id=%d" % (level, row['id'])
-            self.db_conn.Execute(sql)
-
     def run(self):
-        self.update_level()
+        self.calculate_path_level()
 
 if __name__ == '__main__':
     btlog_init('log_format.log', logfile=True, console=False)
     d = Zz6Formater()
-    d.run()
+#    d.run()
+#    d.stat()
+    d.calculate_city_id()

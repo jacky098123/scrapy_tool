@@ -16,8 +16,8 @@ from scrapy.selector import HtmlXPathSelector
 from scrapy.contrib.linkextractors.sgml import SgmlLinkExtractor
 from scrapy.spider import BaseSpider
 
-class Zz6Parse(CommonHandler):
-    TEST_FILE = '.zz6.html'
+class Zz6ParseNew(CommonHandler):
+    TEST_FILE = '.zz6new.html'
 
     CONVERT_DICT = {
         u'简称': 'short_name',
@@ -33,15 +33,15 @@ class Zz6Parse(CommonHandler):
         u'身份证前六位': 'idcard_prefix',
     }
 
-    def _format(self, item_list, join_flag=False):
-        if len(item_list) > 0:
-            if join_flag:
-                s = u''.join(item_list)
-                return s.strip()
-            else:
-                return item_list[0].strip()
-        else:
-            return ''
+    def get_single_item(self, _selector, _path):
+        _lst = _selector.select(_path).extract()
+        if len(_lst) == 0:
+            return u''
+        return _lst[0].strip()
+
+    def get_multiple_items(self, _selector, _path):
+        _lst = _selector.select(_path).extract()
+        return _lst
 
     def parse_descendant(self, html):
         html = self.ToUnicode(html, 'gb2312')
@@ -59,10 +59,8 @@ class Zz6Parse(CommonHandler):
             td_selector_list = descendant_selector.select(".//td")
 
             data_info = {}
-            descendant_name = td_selector_list[0].select('.//strong/a/text()').extract()
-            data_info['descendant_name'] = self._format(descendant_name)
-            descendant_url = td_selector_list[0].select('.//strong/a/@tppabs').extract()
-            data_info['descendant_url'] = self._format(descendant_url)
+            data_info['anchor_text'] = self.get_single_item(td_selector_list[0], './/strong/a/text()')
+            data_info['url'] = self.get_single_item(td_selector_list[0], './/strong/a/@tppabs')
             data_info_list.append(data_info)
 
         for data_dict in data_info_list:
@@ -76,32 +74,26 @@ class Zz6Parse(CommonHandler):
         hxs = HtmlXPathSelector(text=html)
 
         data_info = {}
-        h1 = hxs.select(".//h1/text()").extract()
-        data_info['title'] = self._format(h1)
+        data_info['title'] = self.get_single_item(hxs, ".//h1/text()")
 
-        info_selector_list = hxs.select(".//div[@id='pagebody']/div[@id='page_left']/table[2]/tr/td[1]/table/tr/td")
+        info_selector_list = hxs.select(".//*[@id='page_left']/table[2]/tr/td[1]/table/tr/td")
         for info_selector in info_selector_list:
-            key = info_selector.select('.//strong/text()').extract()
-            key = self._format(key)
-            value = info_selector.select('text()').extract()
-            value = self._format(value)
-            value = value.strip(u':')
+            key     = self.get_single_item(info_selector, './/strong/text()')
+            value   = self.get_single_item(info_selector, 'text()')
+            value   = value.strip(u':')
             if not value:
-                value = info_selector.select('.//a/text()').extract()
-                value = self._format(value)
+                value = self.get_single_item(info_selector, './/a/text()')
             if key and value:
                 if self.CONVERT_DICT.get(key):
                     data_info[self.CONVERT_DICT[key]] = value
                 elif key.find(u'地址') > 0:
                     data_info['address'] = value
                 else:
-                    pass
-#data_info[key] = value
+                    logging.warn("key: %s, value: %s" % (self.ToString(key), self.ToString(value)))
 
-        desc_list = hxs.select(".//div[@id='pagebody']/div[@id='page_left']/table[2]/tr/td[2]/text()")
-        data_info['description'] = ''
-        for desc in desc_list:
-            data_info['description'] += desc.extract()
+        _lst = self.get_multiple_items(hxs, ".//*[@id='page_left']/table[2]/tr/td[2]/text()")
+        data_info['description'] = "\n".join(_lst)
+
 
         for k,v in data_info.iteritems():
             print k,v
@@ -113,42 +105,45 @@ class Zz6Parse(CommonHandler):
         hxs = HtmlXPathSelector(text=html)
 
         data_info = {}
-        h1 = hxs.select(".//h1/text()").extract()
-        data_info['title'] = self._format(h1)
+        data_info['title'] = self.get_single_item(hxs, ".//h1/text()")
 
         info_selector_list = hxs.select(".//table[@width='432px' and @bgcolor='cccccc']/tr/td")
         if len(info_selector_list) == 0:
             info_selector_list = hxs.select(".//table[@width='396px' and @bgcolor='cccccc']/tr/td")
         for info_selector in info_selector_list:
-            key = info_selector.select(".//strong/text()").extract()
-            key = self._format(key)
-            v = info_selector.select("text()").extract()
-            v = self._format(v, True)
+            key = self.get_single_item(info_selector, ".//strong/text()")
+            v = self.get_multiple_items(info_selector, "text()")
+            v = "\n".join(v)
+            v = v.strip()
             if v:
                 v = v.strip(":")
             if key and v:
                 if self.CONVERT_DICT.get(key):
                     data_info[self.CONVERT_DICT[key]] = v
                 else:
-                    pass
-#                    data_info[key] = v
+                    logging.warn("key: %s, value: %s" % (self.ToString(key), self.ToString(v)))
+
         f14_desc_list = hxs.select(".//div[@class='f14']/text()").extract()
         data_info['description'] = "\n".join(f14_desc_list)
     
+        f12_lst = self.get_multiple_items(hxs, ".//*[@id='page_left']//div[@class='f12']/text()")
+        data_info['f12'] = "\n".join(f12_lst)
 
         for k,v in data_info.iteritems():
             print k,v
         return data_info
 
     def test(self):
-        url = "http://www.zz6.cn/beijing/"
-#        url = "http://www.zz6.cn/chongqing/zhongxian.html"
+        url = "http://www.zz6.cn/hebei/xinshiqu_xianfengjiedao.html"
+        url = "http://www.zz6.cn/hebei/xinshiqu.html"
 #        url = "http://www.zz6.cn/hubei/chibi_huanggaihunongchangdi.html"
         print url
         urllib.urlretrieve(url, self.TEST_FILE)
         html_data = self.LoadFile(self.TEST_FILE)
-        data_list   = self.parse_province_info(html_data)
+#        data_dict   = self.parse_province_info(html_data)
+        data_dict = self.parse_sub_info(html_data)
+#        self.parse_descendant(html_data)
 
 if __name__ == '__main__':
-    z = Zz6Parse()
+    z = Zz6ParseNew()
     z.test()

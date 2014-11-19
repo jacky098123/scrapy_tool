@@ -24,7 +24,6 @@ from scrapy_tool.items import ScrapyToolItem
 
 LOCAL_DB = {
     "host"  : "192.168.2.11",
-#    "host"  : "127.0.0.1",
     "user"  : "product_w",
     "passwd": "kooxoo",
     "database"  : "test",
@@ -34,7 +33,7 @@ LOCAL_DB = {
 
 class ImageSpider(BaseSpider, CommonHandler):
     name = "image"
-    allowed_domains = ["techan.com"]
+    allowed_domains = ["tuniu.com"]
 
     def __init__(self, kxdebug=None):
         self.kxdebug    = kxdebug
@@ -46,18 +45,23 @@ class ImageSpider(BaseSpider, CommonHandler):
     def start_requests(self):
         request_list    = []
         '''
-        sql = "select a.id,a.tc_img as url from basic_data.techan a left join basic_data.image_info b  "
+        sql = "select a.tc_img as url from basic_data.techan a left join basic_data.image_info b  "
         sql += " on a.tc_img = b.url where b.url is null"
         '''
-        sql = "select a.id,a.head_image as url from basic_data.tour_line a left join basic_data.image_info b "
+        '''
+        sql = "select a.head_image as url from basic_data.tour_line a left join basic_data.image_info b "
         sql += " on a.head_image = b.source_url where b.source_url is null and a.head_image like 'http://%' "
+        '''
+        # sql = "select distinct head_image as url from basic_data.tour_line where crawl_site='ctrip' and head_image like 'http://%' "
+        sql = "select distinct head_image as url from basic_data.tour_line where crawl_site='tuniu.com' and head_image like 'http://%' and image_id <= 0 "
         self.log(sql)
         result_set = self.db_conn.QueryDict(sql)
         self.log("result_set: %d" % len(result_set))
+        pdb.set_trace()
         for row in result_set:
             request = Request(
                 url     = row['url'],
-                meta    = {'kx_args': {'retry_times': 0, 'id': row['id'], 'url': row['url']}})
+                meta    = {'kx_args': {'retry_times': 0, 'url': row['url']}})
             request_list.append(request)
         self.log("total request: %d" % len(request_list))
         return request_list
@@ -82,7 +86,7 @@ class ImageSpider(BaseSpider, CommonHandler):
                 db_dict = {}
                 db_dict['source_url']   = kx_args['url']
                 db_dict['image_content']= image_content
-                db_dict['category']     = 'tour' # TODO
+                db_dict['category']     = 'tour_ctrip' # TODO
                 self.db_conn.ExecuteInsertDict('basic_data.image_info', db_dict)
             except Exception, e:
                 self.log("invalid Image: %s" % str(e))
